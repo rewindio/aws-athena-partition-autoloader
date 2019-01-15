@@ -1,0 +1,98 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Description: SAM app that automatically loads Athena partitions for new partitions in S3
+
+Parameters:
+  S3Bucket:
+    Type: String
+  AthenaResultsBucket:
+    Type: String
+  AthenaDatabase:
+    Type: String
+  AthenaTable:
+    Type: String
+  PartitionKeys:
+    Type: String
+
+Resources:
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: "/"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Sid: "AllowLambdaServiceToAssumeRole"
+            Effect: "Allow"
+            Action: 
+              - "sts:AssumeRole"
+            Principal:
+              Service: 
+                - "lambda.amazonaws.com"
+      ManagedPolicyArns: 
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies: 
+        - 
+          PolicyName: "AthenaPartitionLoader"
+          PolicyDocument: 
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 's3:Get*'
+                  - 's3:List*'
+                  - 's3:Put*'
+                Resource:
+                  - !Sub arn:aws:s3:::${AthenaResultsBucket}
+                  - !Sub arn:aws:s3:::${AthenaResultsBucket}/*
+
+              - Effect: Allow
+                Action:
+                  - 's3:Get*'
+                  - 's3:ListBucket'
+                Resource:
+                  - !Sub arn:aws:s3:::${S3Bucket}
+                  - !Sub arn:aws:s3:::${S3Bucket}/*
+
+              - Effect: Allow
+                Action:
+                  - 'athena:RunQuery'
+                  - 'athena:StartQueryExecution'
+                  - 'athena:GetQueryResultsStream'
+                  - 'athena:StopQueryExecution'
+                  - 'athena:GetQueryExecution'
+                  - 'athena:GetQueryResults'
+                  - 'athena:GetQueryExecutions'
+                  - 'athena:GetTables'
+                  - 'athena:GetTable'
+                  - 'glue:GetDatabase'
+                  - 'glue:GetTable'
+                  - 'glue:GetTables'
+                  - 'glue:GetPartition'
+                  - 'glue:GetPartitions'
+                  - 'glue:BatchCreatePartition'
+                Resource:
+                  - '*'
+
+  AthenaPartitionLoader:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: src/app.lambda_handler
+      Runtime: python3.6
+      CodeUri: .
+      Description: Automatically loads Athena partitions for new partitions in S3.
+      MemorySize: 128
+      Timeout: 900
+      Environment:
+        Variables:
+          ATHENA_DATABASE: !Ref AthenaDatabase
+          ATHENA_TABLE: !Ref AthenaTable
+          PARTITION_KEYS: !Ref PartitionKeys
+      Role: !GetAtt LambdaRole.Arn
+
+Outputs:
+  InvalidatorFunctionName:
+    Description: The name of the lambda Function
+    Value: !Ref AthenaPartitionLoader
