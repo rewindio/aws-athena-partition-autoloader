@@ -13,7 +13,7 @@ This solution subscribes to S3 events on a bucket and detects when a new partiti
 ## Deploying to AWS
 Before starting, you will need:
 * The [AWS CLI](https://aws.amazon.com/cli/) installed and default credentials configured
-* the [AWS SAM CLI](https://github.com/awslabs/aws-sam-cli) installed
+* The [AWS SAM CLI](https://github.com/awslabs/aws-sam-cli) installed
 * An existing S3 bucket where the AWS Lambda code will be deployed to by SAM
 * An existing Athena table backed by content in S3 with at least 1 partition key
 * This repo cloned
@@ -33,3 +33,6 @@ For Example:
 The list of partition keys must exactly match that which was defined on the table.
 
 deploy.sh uses AWS SAM to package the AWS Lambda functions and then deploys them to AWS.  Everything is deployed as a Cloudformation Stack in the specified region.
+
+| NOTE: If you don't have SAM installed, you can replace the SAM commands in the deploy script with `aws cloudformation package...` and `aws cloudformation deploy..` instead |
+| --- |
