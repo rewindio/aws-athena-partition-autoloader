@@ -1,17 +1,19 @@
 #!/bin/bash
 
-OPERATION=$1
-DEPLOY_BUCKET=$2
-CONTENT_BUCKET=$3
-ATHENA_RESULTS_BUCKET=$4
-ATHENA_DATABASE=$5
-ATHENA_TABLE=$6
-PARTITION_KEYS=$7
-PROFILE=$8
+STACK_NAME=$1
+STACK_REGION=$2
+ATHENA_REGION=$3
+OPERATION=$4
+DEPLOY_BUCKET=$5
+CONTENT_BUCKET=$6
+ATHENA_RESULTS_BUCKET=$7
+ATHENA_DATABASE=$8
+ATHENA_TABLE=$9
+PARTITION_KEYS=${10}
+PROFILE=${11}
 
-REGION=us-east-1
-
-STACK_NAME=aws-athena-partition-autoloader
+# No longer hard code as need different functions for different tables
+# STACK_NAME=aws-athena-partition-autoloader
 
 if [ "${OPERATION}" == "ALL" ]; then
     echo "Packaging using SAM....."
@@ -19,7 +21,7 @@ if [ "${OPERATION}" == "ALL" ]; then
         --template-file template.yaml \
         --output-template-file packaged.yaml \
         --s3-bucket ${DEPLOY_BUCKET} \
-        --region ${REGION} \
+        --region ${STACK_REGION} \
         --profile ${PROFILE}
 
     echo "Deploying using SAM...."
@@ -27,8 +29,8 @@ if [ "${OPERATION}" == "ALL" ]; then
     --template-file packaged.yaml \
         --stack-name ${STACK_NAME} \
         --capabilities CAPABILITY_IAM \
-        --parameter-overrides S3Bucket=${CONTENT_BUCKET} AthenaResultsBucket=${ATHENA_RESULTS_BUCKET} AthenaDatabase=${ATHENA_DATABASE} AthenaTable=${ATHENA_TABLE} PartitionKeys=${PARTITION_KEYS}\
-        --region ${REGION} \
+        --parameter-overrides S3Bucket=${CONTENT_BUCKET} AthenaRegion=${ATHENA_REGION} AthenaResultsBucket=${ATHENA_RESULTS_BUCKET} AthenaDatabase=${ATHENA_DATABASE} AthenaTable=${ATHENA_TABLE} PartitionKeys=${PARTITION_KEYS}\
+        --region ${STACK_REGION} \
         --profile ${PROFILE}
 fi
 
@@ -39,7 +41,7 @@ fi
 AWS_ACCOUNT_ID=$(aws sts get-caller-identity \
                     --query 'Account' \
                     --output text \
-                    --region ${REGION} \
+                    --region ${STACK_REGION} \
                     --profile ${PROFILE}
 )
 echo "Our AWS account ID is ${AWS_ACCOUNT_ID}"
@@ -48,7 +50,7 @@ FUNCTION_NAME=$(aws cloudformation describe-stacks \
                 --stack-name ${STACK_NAME} \
                 --query 'Stacks[].Outputs[].OutputValue' \
                 --output text \
-                --region ${REGION} \
+                --region ${STACK_REGION} \
                 --profile ${PROFILE}
 )
 echo "The Lambda function name is ${FUNCTION_NAME}"
@@ -57,7 +59,7 @@ FUNCTION_ARN=$(aws lambda get-function \
                 --function-name ${FUNCTION_NAME} \
                 --query 'Configuration.FunctionArn' \
                 --output text \
-                --region ${REGION} \
+                --region ${STACK_REGION} \
                 --profile ${PROFILE}
 )
 echo "The Lambda function ARN is ${FUNCTION_ARN}"
@@ -67,7 +69,7 @@ echo "Adding Lambda invoke permissions..."
 
 aws lambda add-permission \
     --function-name ${FUNCTION_NAME} \
-    --region ${REGION} \
+    --region ${STACK_REGION} \
     --profile ${PROFILE} \
     --statement-id "s3perms-${CONTENT_BUCKET}" \
     --action "lambda:InvokeFunction" \
@@ -82,5 +84,5 @@ echo "Adding AWS event subscription for bucket ${CONTENT_BUCKET}"
 aws s3api put-bucket-notification-configuration \
     --bucket ${CONTENT_BUCKET} \
     --notification-configuration ${S3_LAMBDA_EVENT_SUBSCRIPTION} \
-    --region ${REGION} \
-    --profile ${PROFILE} \
+    --region ${STACK_REGION} \
+    --profile ${PROFILE}

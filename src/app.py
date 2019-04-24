@@ -11,7 +11,10 @@ from pprint import pprint
 # Global holding the AWS account ID this is executing in
 account_id = 0
 
-session = boto3.session.Session()
+# The bucket could be in one region with the Athena DB being in a seperate region
+athena_region = os.environ['ATHENA_REGION']
+
+session = boto3.session.Session(region_name = athena_region)
 
 #
 # Get the current AWS account ID

@@ -21,13 +21,13 @@ Before starting, you will need:
 1. Run the *deploy.sh* script like
 
 ```
-./deploy.sh <ction>  <s3 bucket to store lamba code in> <s3 bucket containing athena data> <S3 bucket for Athena results> <Athena database> <Athena table> <comma-seperated list of athena partition names> <AWS profile>
+./deploy.sh <function_name> <s3 bucket region> <athena region> <action>  <s3 bucket to store lamba code in> <s3 bucket containing athena data> <S3 bucket for Athena results> <Athena database> <Athena table> <comma-seperated list of athena partition names> <AWS profile>
 ```
 
 For Example:
 
 ```
-./deploy.sh ALL lambda-sam-staging stage-audit-log aws-athena-query-results-123456789-us-east-1 audit_log_db api_audit_log 'destination_platform_id,date' staging
+./deploy.sh athena_loader_mytable eu-west-1 us-east-1 ALL lambda-sam-staging stage-audit-log aws-athena-query-results-123456789-us-east-1 audit_log_db api_audit_log 'destination_platform_id,date' staging
 ```
 
 The list of partition keys must exactly match that which was defined on the table.

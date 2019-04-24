@@ -8,6 +8,8 @@ Parameters:
     Type: String
   AthenaResultsBucket:
     Type: String
+  AthenaRegion:
+    Type: String
   AthenaDatabase:
     Type: String
   AthenaTable:
@@ -87,6 +89,7 @@ Resources:
       Timeout: 900
       Environment:
         Variables:
+          ATHENA_REGION: !Ref AthenaRegion
           ATHENA_DATABASE: !Ref AthenaDatabase
           ATHENA_TABLE: !Ref AthenaTable
           PARTITION_KEYS: !Ref PartitionKeys
