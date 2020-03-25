@@ -170,6 +170,8 @@ def add_partition(session, database, table_name, partition, bucket):
     sql = 'ALTER TABLE ' + table_name + ' ADD PARTITION ('
 
     partition_key_vals = partition.split('/')
+    # Filter out any prefix dirs from the key
+    partition_key_vals = [p for p in partition_key_vals if "=" in p]
     partiton_key_count = len(partition_key_vals)
 
     for part in partition_key_vals:
